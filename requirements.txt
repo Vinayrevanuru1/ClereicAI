@@ -1,3 +1,5 @@
+flask
+requests
 openai==0.27
 pydantic==2.9.2
 kubernetes==31.0.0
